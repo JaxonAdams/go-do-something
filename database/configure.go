@@ -36,7 +36,7 @@ func createTable(svc *dynamodb.Client) error {
 		},
 		KeySchema: []types.KeySchemaElement{
 			{AttributeName: aws.String("UserID"), KeyType: types.KeyTypeHash},
-			{AttributeName: aws.String("ItemID"), KeyType: types.KeyTypeRange}, // Sort key
+			{AttributeName: aws.String("TodoID"), KeyType: types.KeyTypeRange}, // Sort key
 		},
 		BillingMode: types.BillingModePayPerRequest,
 		GlobalSecondaryIndexes: []types.GlobalSecondaryIndex{
@@ -50,7 +50,7 @@ func createTable(svc *dynamodb.Client) error {
 					ProjectionType: types.ProjectionTypeAll,
 				},
 				ProvisionedThroughput: nil,
-			}
+			},
 		},
 	})
 
