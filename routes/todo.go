@@ -19,7 +19,14 @@ type TodoListItem struct {
 	CreatedAt   string `json:"created_at"`
 }
 
-func GetTodoItemsByUserID(userID string, svc *dynamodb.Client, c *gin.Context) {
+func RegisterTodoRoutes(r *gin.RouterGroup, svc *dynamodb.Client) {
+	r.GET("/todo", func(c *gin.Context) {
+		userID := "jaxontest@example.com" // TODO: add actual authentication
+		getTodoItemsByUserID(userID, svc, c)
+	})
+}
+
+func getTodoItemsByUserID(userID string, svc *dynamodb.Client, c *gin.Context) {
 	todoItems, err := database.GetUserTodoList(svc, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not fetch to-do items"})
