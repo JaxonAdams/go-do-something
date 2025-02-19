@@ -33,6 +33,12 @@ func main() {
 	// 	log.Fatalf("Failed to put TODO item: %v", err)
 	// }
 
+	// Test updating a to-do item's status
+	err = database.UpdateTodoItemStatus(svc, "jaxontest@example.com", "1739949328475", "done")
+	if err != nil {
+		log.Fatalf("Failed to update to-do item status: %v", err)
+	}
+
 	// Test fetching a user's to-do list
 	items, err := database.GetUserTodoList(svc, "jaxon.adams@loanpro.io")
 	if err != nil {

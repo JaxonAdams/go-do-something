@@ -44,3 +44,26 @@ func GetUserTodoList(svc *dynamodb.Client, userID string) ([]map[string]types.At
 	}
 	return resp.Items, nil
 }
+
+func UpdateTodoItemStatus(svc *dynamodb.Client, userID, todoID, newStatus string) error {
+	_, err := svc.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
+		TableName: aws.String("TodoItems"),
+		Key: map[string]types.AttributeValue{
+			"UserID": &types.AttributeValueMemberS{Value: userID},
+			"TodoID": &types.AttributeValueMemberS{Value: todoID},
+		},
+		UpdateExpression: aws.String("SET #status = :newStatus"),
+		ExpressionAttributeNames: map[string]string{
+			"#status": "Status",
+		},
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":newStatus": &types.AttributeValueMemberS{Value: newStatus},
+		},
+		ReturnValues: types.ReturnValueUpdatedNew,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to update todo item: %w", err)
+	}
+	return nil
+}
