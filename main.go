@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"go-do-something/database"
 	"log"
+	"strconv"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 )
@@ -18,5 +19,17 @@ func main() {
 
 	svc := database.ConfigureDBClient(&cfg)
 
-	fmt.Println(svc)
+	// Test inserting a record to the database
+	err = database.PutTodoItem(
+		svc,
+		"jaxon.adams@loanpro.io",
+		strconv.FormatInt(time.Now().UnixMilli(), 10),
+		"Test Item",
+		"Test this TODO item",
+		"TODO",
+		"2025-02-28",
+	)
+	if err != nil {
+		log.Fatalf("Failed to put TODO item: %v", err)
+	}
 }
