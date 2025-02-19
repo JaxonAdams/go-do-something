@@ -29,12 +29,29 @@ func createTable(svc *dynamodb.Client) error {
 	_, err := svc.CreateTable(context.TODO(), &dynamodb.CreateTableInput{
 		TableName: aws.String("TodoItems"),
 		AttributeDefinitions: []types.AttributeDefinition{
-			{AttributeName: aws.String("ItemID"), AttributeType: types.ScalarAttributeTypeS},
+			{AttributeName: aws.String("UserID"), AttributeType: types.ScalarAttributeTypeS},
+			{AttributeName: aws.String("TodoID"), AttributeType: types.ScalarAttributeTypeS},
+			{AttributeName: aws.String("Status"), AttributeType: types.ScalarAttributeTypeS},
+			{AttributeName: aws.String("DueDate"), AttributeType: types.ScalarAttributeTypeS},
 		},
 		KeySchema: []types.KeySchemaElement{
-			{AttributeName: aws.String("ItemID"), KeyType: types.KeyTypeHash},
+			{AttributeName: aws.String("UserID"), KeyType: types.KeyTypeHash},
+			{AttributeName: aws.String("ItemID"), KeyType: types.KeyTypeRange}, // Sort key
 		},
 		BillingMode: types.BillingModePayPerRequest,
+		GlobalSecondaryIndexes: []types.GlobalSecondaryIndex{
+			{
+				IndexName: aws.String("StatusDueDateIndex"),
+				KeySchema: []types.KeySchemaElement{
+					{AttributeName: aws.String("Status"), KeyType: types.KeyTypeHash},
+					{AttributeName: aws.String("DueDate"), KeyType: types.KeyTypeRange},
+				},
+				Projection: &types.Projection{
+					ProjectionType: types.ProjectionTypeAll,
+				},
+				ProvisionedThroughput: nil,
+			}
+		},
 	})
 
 	if err != nil {
