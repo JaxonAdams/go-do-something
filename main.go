@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"go-do-something/database"
 	"log"
-	"strconv"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
 func main() {
@@ -20,16 +20,38 @@ func main() {
 	svc := database.ConfigureDBClient(&cfg)
 
 	// Test inserting a record to the database
-	err = database.PutTodoItem(
-		svc,
-		"jaxon.adams@loanpro.io",
-		strconv.FormatInt(time.Now().UnixMilli(), 10),
-		"Test Item",
-		"Test this TODO item",
-		"TODO",
-		"2025-02-28",
-	)
+	// err = database.PutTodoItem(
+	// 	svc,
+	// 	"jaxontest@example.com",
+	// 	strconv.FormatInt(time.Now().UnixMilli(), 10),
+	// 	"OTHER USER ITEM",
+	// 	"This is another user's item.",
+	// 	"TODO",
+	// 	"2025-02-28",
+	// )
+	// if err != nil {
+	// 	log.Fatalf("Failed to put TODO item: %v", err)
+	// }
+
+	// Test fetching a user's to-do list
+	items, err := database.GetUserTodoList(svc, "jaxon.adams@loanpro.io")
 	if err != nil {
-		log.Fatalf("Failed to put TODO item: %v", err)
+		log.Fatalf("Failed to get to-do list: %v", err)
+	}
+
+	fmt.Println("\nUser To-Do List:")
+	for _, item := range items {
+		title := "N/A"
+		description := "N/A"
+
+		if titleAttr, ok := item["Title"].(*types.AttributeValueMemberS); ok {
+			title = titleAttr.Value
+		}
+
+		if descAttr, ok := item["Description"].(*types.AttributeValueMemberS); ok {
+			description = descAttr.Value
+		}
+
+		fmt.Printf("\n\tTitle: %s\n\tDescription: %s\n", title, description)
 	}
 }

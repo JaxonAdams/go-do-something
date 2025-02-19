@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -56,13 +55,13 @@ func createTable(svc *dynamodb.Client) error {
 
 	if err != nil {
 		if isTableExistsError(err) {
-			fmt.Println("Table already exists, skipping creation.")
+			// Table already exists
 			return nil
 		}
 		return err
 	}
 
-	fmt.Println("Table created successfully!")
+	// Table created successfully
 	return nil
 }
 

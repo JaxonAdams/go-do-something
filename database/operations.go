@@ -30,3 +30,17 @@ func PutTodoItem(svc *dynamodb.Client, userID, todoID, title, description, statu
 	fmt.Println("Todo item inserted successfully!")
 	return nil
 }
+
+func GetUserTodoList(svc *dynamodb.Client, userID string) ([]map[string]types.AttributeValue, error) {
+	resp, err := svc.Query(context.TODO(), &dynamodb.QueryInput{
+		TableName:              aws.String("TodoItems"),
+		KeyConditionExpression: aws.String("UserID = :userID"),
+		ExpressionAttributeValues: map[string]types.AttributeValue{
+			":userID": &types.AttributeValueMemberS{Value: userID},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.Items, nil
+}
