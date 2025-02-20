@@ -39,6 +39,11 @@ func RegisterTodoRoutes(r *gin.RouterGroup, svc *dynamodb.Client) {
 		createTodoItem(userID, svc, c)
 	})
 
+	r.GET("/todo/:todoID", func(c *gin.Context) {
+		userID := "jaxontest@example.com" // TODO: add actual authentication
+		getSingleTodoItemByID(userID, svc, c)
+	})
+
 	r.DELETE("/todo/:todoID", func(c *gin.Context) {
 		userID := "jaxontest@example.com" // TODO: add actual authentication
 		deleteTodoItem(userID, svc, c)
@@ -69,6 +74,33 @@ func getTodoItemsByUserID(userID string, svc *dynamodb.Client, c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"results": todoList})
 }
 
+func getSingleTodoItemByID(userID string, svc *dynamodb.Client, c *gin.Context) {
+	todoID := c.Param("todoID")
+
+	item, err := database.GetTodoItem(svc, userID, todoID)
+	if err != nil {
+		fmt.Printf("\nError finding single to-do item: %v\n\n", err)
+
+		if err.Error() == "not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Could not find item with ID: '%v'", todoID)})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"result": TodoListItem{
+		UserID:      util.GetStringAttribute(item, "UserID"),
+		TodoID:      util.GetStringAttribute(item, "TodoID"),
+		Title:       util.GetStringAttribute(item, "Title"),
+		Description: util.GetStringAttribute(item, "Description"),
+		Status:      util.GetStringAttribute(item, "Status"),
+		DueDate:     util.GetStringAttribute(item, "DueDate"),
+		CreatedAt:   util.GetStringAttribute(item, "CreatedAt"),
+	}})
+}
+
 func createTodoItem(userID string, svc *dynamodb.Client, c *gin.Context) {
 	var json NewTodoReq
 	if err := c.ShouldBindJSON(&json); err != nil {
@@ -86,7 +118,7 @@ func createTodoItem(userID string, svc *dynamodb.Client, c *gin.Context) {
 		json.DueDate,
 	)
 	if err != nil {
-		fmt.Printf("\nError creating new item:%v\n\n", err)
+		fmt.Printf("\nError creating new item: %v\n\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create new to-do item"})
 		return
 	}
@@ -98,7 +130,7 @@ func deleteTodoItem(userID string, svc *dynamodb.Client, c *gin.Context) {
 	todoID := c.Param("todoID")
 
 	if err := database.DeleteTodoItem(svc, userID, todoID); err != nil {
-		fmt.Printf("\nError deleting item:%v\n\n", err)
+		fmt.Printf("\nError deleting item: %v\n\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete to-do item"})
 		return
 	}
