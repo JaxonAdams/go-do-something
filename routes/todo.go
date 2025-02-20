@@ -74,6 +74,31 @@ func getTodoItemsByUserID(userID string, svc *dynamodb.Client, c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"results": todoList})
 }
 
+func createTodoItem(userID string, svc *dynamodb.Client, c *gin.Context) {
+	var json NewTodoReq
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err := database.PutTodoItem(
+		svc,
+		userID,
+		strconv.FormatInt(time.Now().UnixMilli(), 10),
+		json.Title,
+		json.Description,
+		"pending",
+		json.DueDate,
+	)
+	if err != nil {
+		fmt.Printf("\nError creating new item: %v\n\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create new to-do item"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": fmt.Sprintf("Successfully created item: '%v'", json.Title)})
+}
+
 func getSingleTodoItemByID(userID string, svc *dynamodb.Client, c *gin.Context) {
 	todoID := c.Param("todoID")
 
@@ -99,31 +124,6 @@ func getSingleTodoItemByID(userID string, svc *dynamodb.Client, c *gin.Context) 
 		DueDate:     util.GetStringAttribute(item, "DueDate"),
 		CreatedAt:   util.GetStringAttribute(item, "CreatedAt"),
 	}})
-}
-
-func createTodoItem(userID string, svc *dynamodb.Client, c *gin.Context) {
-	var json NewTodoReq
-	if err := c.ShouldBindJSON(&json); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	err := database.PutTodoItem(
-		svc,
-		userID,
-		strconv.FormatInt(time.Now().UnixMilli(), 10),
-		json.Title,
-		json.Description,
-		"pending",
-		json.DueDate,
-	)
-	if err != nil {
-		fmt.Printf("\nError creating new item: %v\n\n", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create new to-do item"})
-		return
-	}
-
-	c.JSON(http.StatusCreated, gin.H{"message": fmt.Sprintf("Successfully created item: '%v'", json.Title)})
 }
 
 func deleteTodoItem(userID string, svc *dynamodb.Client, c *gin.Context) {
