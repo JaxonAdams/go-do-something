@@ -38,6 +38,11 @@ func RegisterTodoRoutes(r *gin.RouterGroup, svc *dynamodb.Client) {
 		userID := "jaxontest@example.com" // TODO: add actual authentication
 		createTodoItem(userID, svc, c)
 	})
+
+	r.DELETE("/todo/:todoID", func(c *gin.Context) {
+		userID := "jaxontest@example.com" // TODO: add actual authentication
+		deleteTodoItem(userID, svc, c)
+	})
 }
 
 func getTodoItemsByUserID(userID string, svc *dynamodb.Client, c *gin.Context) {
@@ -87,4 +92,16 @@ func createTodoItem(userID string, svc *dynamodb.Client, c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": fmt.Sprintf("Successfully created item: '%v'", json.Title)})
+}
+
+func deleteTodoItem(userID string, svc *dynamodb.Client, c *gin.Context) {
+	todoID := c.Param("todoID")
+
+	if err := database.DeleteTodoItem(svc, userID, todoID); err != nil {
+		fmt.Printf("\nError deleting item:%v\n\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete to-do item"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Successfully deleted item: '%v'", todoID)})
 }

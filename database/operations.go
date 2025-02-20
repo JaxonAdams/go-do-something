@@ -31,6 +31,20 @@ func PutTodoItem(svc *dynamodb.Client, userID, todoID, title, description, statu
 	return nil
 }
 
+func DeleteTodoItem(svc *dynamodb.Client, userID, todoID string) error {
+	_, err := svc.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
+		TableName: aws.String("TodoItems"),
+		Key: map[string]types.AttributeValue{
+			"UserID": &types.AttributeValueMemberS{Value: userID},
+			"TodoID": &types.AttributeValueMemberS{Value: todoID},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetUserTodoList(svc *dynamodb.Client, userID string) ([]map[string]types.AttributeValue, error) {
 	resp, err := svc.Query(context.TODO(), &dynamodb.QueryInput{
 		TableName:              aws.String("TodoItems"),
