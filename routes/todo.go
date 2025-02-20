@@ -129,6 +129,20 @@ func createTodoItem(userID string, svc *dynamodb.Client, c *gin.Context) {
 func deleteTodoItem(userID string, svc *dynamodb.Client, c *gin.Context) {
 	todoID := c.Param("todoID")
 
+	// First check if item exists...
+	_, err := database.GetTodoItem(svc, userID, todoID)
+	if err != nil {
+		fmt.Printf("\nError finding single to-do item: %v\n\n", err)
+
+		if err.Error() == "not found" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Not found"})
+			return
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Could not find item with ID: '%v'", todoID)})
+		return
+	}
+
 	if err := database.DeleteTodoItem(svc, userID, todoID); err != nil {
 		fmt.Printf("\nError deleting item: %v\n\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not delete to-do item"})
