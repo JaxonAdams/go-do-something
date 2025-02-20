@@ -12,6 +12,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type UpdateStatusReq struct {
+	Status string `json:"status"`
+}
+
 type NewTodoReq struct {
 	Title       string `json:"title" binding:"required"`
 	Description string `json:"description" binding:"required"`
@@ -42,6 +46,11 @@ func RegisterTodoRoutes(r *gin.RouterGroup, svc *dynamodb.Client) {
 	r.GET("/todo/:todoID", func(c *gin.Context) {
 		userID := "jaxontest@example.com" // TODO: add actual authentication
 		getSingleTodoItemByID(userID, svc, c)
+	})
+
+	r.PUT("/todo/:todoID/status", func(c *gin.Context) {
+		userID := "jaxontest@example.com" // TODO: add actual authentication
+		updateTodoItemStatus(userID, svc, c)
 	})
 
 	r.DELETE("/todo/:todoID", func(c *gin.Context) {
@@ -113,6 +122,44 @@ func getSingleTodoItemByID(userID string, svc *dynamodb.Client, c *gin.Context) 
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Could not find item with ID: '%v'", todoID)})
 		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"result": TodoListItem{
+		UserID:      util.GetStringAttribute(item, "UserID"),
+		TodoID:      util.GetStringAttribute(item, "TodoID"),
+		Title:       util.GetStringAttribute(item, "Title"),
+		Description: util.GetStringAttribute(item, "Description"),
+		Status:      util.GetStringAttribute(item, "Status"),
+		DueDate:     util.GetStringAttribute(item, "DueDate"),
+		CreatedAt:   util.GetStringAttribute(item, "CreatedAt"),
+	}})
+}
+
+func updateTodoItemStatus(userID string, svc *dynamodb.Client, c *gin.Context) {
+	todoID := c.Param("todoID")
+
+	var json UpdateStatusReq
+	if err := c.ShouldBindJSON(&json); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	newStatus := json.Status
+
+	// TODO: find a better way / place to validate me
+	if newStatus != "pending" && newStatus != "in_progress" && newStatus != "done" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid status requested"})
+		return
+	}
+
+	err := database.UpdateTodoItemStatus(svc, userID, todoID, newStatus)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	item, err := database.GetTodoItem(svc, userID, todoID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"result": TodoListItem{
